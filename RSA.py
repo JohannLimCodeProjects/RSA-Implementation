@@ -5,6 +5,22 @@ from KeySchedule import *
 import os
 
 def binary_modular_exponentiation(base,exponent,modulus):
+    '''
+    Binary Modular Exponentiation:
+    
+    Binary modular exponentiation takes advantage of the binary representation of the exponent. 
+    Instead of multiplying the base by itself for each bit of the exponent, it squares the base each time and performs modular reduction at each step. 
+    This reduces the number of multiplications required, making the computation much faster.
+
+    Parameters:
+    base(int): Base for binary modular exponentiation
+    exponent(int): The exponent to raise the base by
+    modulus(int): The value of the modulus to take by
+
+    Returns:
+    result: the value of the modulus after applying the exponent
+    '''
+
     result = 1
     base = base % modulus  # Make sure base is within range
 
@@ -12,90 +28,76 @@ def binary_modular_exponentiation(base,exponent,modulus):
         if exponent % 2 == 1:
             result = (result * base) % modulus
         base = (base * base) % modulus
+        #Integer division, divides lh by rh
         exponent //= 2
 
     return result
 
 def checkIfPrime(p):
+    '''
+    Check If Prime:
+
+    The function checks if the value is a prime number using binary modular exponentiation.
+
+    Parameters:
+    p(int): the value to test if it is a prime number or not
+    
+    Returns:
+    1 if the value is prime
+    '''
+
     if p == 2:
         return True
     return binary_modular_exponentiation(2, p - 1, p) == 1
 
-# def encrypt(ascii, n, e):
-#     blocklen = len(str(n))
-#     blockscalculated = ""
-#     encryptedtext = ""
-#     encryptedblocks = ""
+def encrypt(message, n, e):
+    '''
+    Encrypt:
 
-#     i = 0
-#     while i < len(str(ascii)):
-#         encrypt_block = ascii[i:i + blocklen]
-#         if int(encrypt_block) < n:
-#             blockscalculated += f"|{encrypt_block}|"
-#         else:
-#             encrypt_block = ascii[i:i + (blocklen - 1)]
-#             blockscalculated += f"|{encrypt_block}|"
-#             i -= 1
-            
-#         encrypted = str((int(encrypt_block) ** e) % n)
-#         encrypted = encrypted.zfill(4)
-#         encryptedtext += encrypted
-#         encryptedblocks += f"|{encrypted}|"
-#         i += blocklen
+    Encrypts the message using the RSA algorithm and its public key
 
-#     print(blockscalculated)
-#     print(encryptedblocks)
-#     return encryptedtext
-
-# def decrypt(encrypted_text, n, d):
-#     blocklen = len(str(n))
-#     blockscalculated = ""
-#     decrypted_text = ""
-#     decrypted_blocks = ""
+    Parameters:
+    n(int): the value of p * q
+    e(int): the public key
     
-#     i = 0
-#     while i < len(str(encrypted_text)):
-#         decrypt_block = encrypted_text[i:i + blocklen]
-#         if int(decrypt_block) < n:
-#             blockscalculated += f"|{decrypt_block}|"
-#         else:
-#             decrypt_block = encrypted_text[i:i + (blocklen - 1)]
-#             blockscalculated += f"|{decrypt_block}|"
-#             i -= 1
-            
-#         decrypted = str((int(decrypt_block) ** d) % n)
-#         decrypted_text += decrypted
-#         decrypted_blocks += f"|{decrypted}|"
-#         i += blocklen
+    Returns:
+    ciphertext(str): The encrypted text
+    '''
 
-#     print(blockscalculated)
-#     print(decrypted_blocks)
-#     return decrypted_text
-
-def encrypt(plaintext,n,e):
-    # Unpack the key into it's components
-    # Convert each letter in the plaintext to numbers based on the character using a^b mod m
-    cipher = [pow(ord(char), e, n) for char in plaintext]
-    # Return the array of bytes
-    return cipher
-
-
-def decrypt(ciphertext,n,d):
-    # Unpack the key into its components
-    # Generate the plaintext based on the ciphertext and key using a^b mod m
-    aux = [str(pow(char, d, n)) for char in ciphertext]
-    # Return the array of bytes as a string
-    plain = [chr(int(char2)) for char2 in aux]
-    return ''.join(plain)
-
-
-def encodeASCII(message):
-    ASCIIstring = ""
-    
+    ciphertext = ""
     for char in message:
-        ASCIIstring += str(ord(char))
+        ascii = ord(char)
+        cipher = pow(ascii,e,n)
 
-    return ASCIIstring        
+        cipher = str(cipher).zfill(4)
+        ciphertext += cipher
+        print(cipher)
+
+    return ciphertext
+
+def decrypt(encrypted_text, n, d):
+    '''
+    Decrypt:
+
+    Decrypts the message using the RSA algorithm and its private key
+
+    Parameters:
+    n(int): the value of p * q
+    d(int): the private key
+    
+    Returns:
+    decrypted_text(str): The decrypted text
+    '''
+    decrypted_text = ""
+    for i in range(0,len(encrypted_text),4):
+        print(i)
+        encrypted_block = encrypted_text[i:i+4]
+        decrypted_block = pow(int(encrypted_block),d,n)
+
+        char = chr(int(decrypted_block))
+        decrypted_text += char
+
+    return decrypted_text   
 
 if __name__ == "__main__":
     cwd = os.getcwd()
@@ -133,9 +135,22 @@ if __name__ == "__main__":
             print("Reenter a prime number q")
     
     d,n,e = key_schedule(p,q)
-
+    print(f"d:{d} n: {n} e: {e}")
     encrypted_text = encrypt(message,n,e)
-    print(f"Encrypted Text: {encrypted_text}")
-    
-    decrypted_text = decrypt(encrypted_text,n,d)
+    savePath = "./out/Encrypted.txt"
+    #Output the encrypted and decrypted text files
+    with open(savePath,"w") as e:
+        e.write(str(encrypted_text))
+    print(f"Encrypted file saved to {savePath}")
+
+    outPath = os.path.join(cwd,"out")
+    outPathFiles = os.listdir(outPath)
+    print(f"Choose a file to decrypt from {outPathFiles}")
+    fileName = input()
+    decryptPath = os.path.join(outPath,fileName)
+    with open(decryptPath,"r") as r:
+        text_in_file = r.read()
+    decrypted_text = decrypt(text_in_file,n,d)
     print(f"Decrypted Text: {decrypted_text}")
+    with open("./out/Decrypted.txt","w") as d:
+        d.write(decrypted_text)
