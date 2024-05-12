@@ -3,6 +3,7 @@ import sympy
 import math
 from KeySchedule import *
 import os
+import random
 
 def binary_modular_exponentiation(base,exponent,modulus):
     '''
@@ -99,7 +100,22 @@ def decrypt(encrypted_text, n, d):
 
     return decrypted_text   
 
+def generate_random_prime():
+    while True:
+        # Generate a random number with at least 128 bits
+        candidate = random.getrandbits(65)
+        # Ensure the number is odd to increase the chance of being prime
+        candidate |= 1
+        # Perform primality testing using Miller-Rabin test
+        if checkIfPrime(candidate) == 1:
+            return candidate
+
 if __name__ == "__main__":
+
+    p = generate_random_prime()
+    q = generate_random_prime()
+    print(f"Generated random primes P:{p} , Q: {q}")
+
     cwd = os.getcwd()
     dirFiles = os.listdir(cwd)
     for file in dirFiles:
@@ -115,36 +131,23 @@ if __name__ == "__main__":
             break
         else:
             print("The file you wish to encrypt does not exist or is not a text file")
-    
-    while True:
-        print("Enter a prime number for the value of p")
-        p = int(input())
-        # print(checkIfPrime(int(p)))
-        if checkIfPrime(p) is True:
-            break
-        else:
-            print("Reenter a prime number p")
 
-    while True:
-        print("Enter a prime number for the value of q")
-        q = int(input())
-        # print(checkIfPrime(q))
-        if checkIfPrime(q) is True:
-            break
-        else:
-            print("Reenter a prime number q")
-    
+    #The key schedule generated
     d,n,e = key_schedule(p,q)
     print(f"d:{d} n: {n} e: {e}")
+
+    #Output the encrypted and decrypted text files
+
+    #Encryption code
     encrypted_text = encrypt(message,n,e)
     savePath = "./out/Encrypted.txt"
-    #Output the encrypted and decrypted text files
     with open(savePath,"w") as e:
         e.write(str(encrypted_text))
     print(f"Encrypted file saved to {savePath}")
-
     outPath = os.path.join(cwd,"out")
     outPathFiles = os.listdir(outPath)
+
+    #Decryption code
     print(f"Choose a file to decrypt from {outPathFiles}")
     fileName = input()
     decryptPath = os.path.join(outPath,fileName)
