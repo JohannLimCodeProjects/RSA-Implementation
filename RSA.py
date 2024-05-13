@@ -1,5 +1,5 @@
 # sympy package includes an isprime function
-import sympy
+import gmpy2
 import math
 from KeySchedule import *
 import os
@@ -50,7 +50,7 @@ def checkIfPrime(p):
     if p == 2:
         return True
     return binary_modular_exponentiation(2, p - 1, p) == 1
-
+    
 def encrypt(message, n, e):
     '''
     Encrypt:
@@ -66,14 +66,14 @@ def encrypt(message, n, e):
     '''
 
     ciphertext = ""
+    n_hex_length = len(hex(n))
     for char in message:
-        ascii = ord(char)
-        cipher = pow(ascii,e,n)
-
-        cipher = str(cipher).zfill(4)
-        ciphertext += cipher
-        print(cipher)
-
+        int_char = ord(char)
+        encrypted_char = gmpy2.powmod(int_char,e,n)
+        hex_char = encrypted_char.digits(16)
+        hex_char = hex_char.zfill(n_hex_length)
+        ciphertext += hex_char
+    
     return ciphertext
 
 def decrypt(encrypted_text, n, d):
@@ -90,21 +90,34 @@ def decrypt(encrypted_text, n, d):
     decrypted_text(str): The decrypted text
     '''
     decrypted_text = ""
-    for i in range(0,len(encrypted_text),4):
-        print(i)
-        encrypted_block = encrypted_text[i:i+4]
-        decrypted_block = pow(int(encrypted_block),d,n)
+    
+    n_hex_length = len(hex(n))
+    for i in range(0,len(encrypted_text),n_hex_length):
+        hex_char = encrypted_text[i:i+n_hex_length]
+        encrypted_char = gmpy2.mpz(hex_char,base =16)
+        decrypted_char = gmpy2.powmod(encrypted_char,d,n)
+        decrypted_char = chr(int(decrypted_char))
 
-        char = chr(int(decrypted_block))
-        decrypted_text += char
-
+        decrypted_text += decrypted_char
     return decrypted_text   
 
 def generate_random_prime():
+    '''
+    Generate Random Prime:
+
+    Function which implements prime number generation which is larger than 2^64
+
+    Using get randbits we generate a value which is at least 65 bits in length therefore larger than 2^64.
+
+    Returns:
+    candidate: a value which is prime
+    '''
+
     while True:
         # Generate a random number with at least 128 bits
         candidate = random.getrandbits(65)
         # Ensure the number is odd to increase the chance of being prime
+        # Converts the result of candidate to and odd value by changing the value of the right most bit
         candidate |= 1
         # Perform primality testing using Miller-Rabin test
         if checkIfPrime(candidate) == 1:
@@ -112,6 +125,7 @@ def generate_random_prime():
 
 if __name__ == "__main__":
 
+    # Generate random values of p and q which are larger than 2^64
     p = generate_random_prime()
     q = generate_random_prime()
     print(f"Generated random primes P:{p} , Q: {q}")
@@ -121,6 +135,7 @@ if __name__ == "__main__":
     for file in dirFiles:
         if file.endswith(".txt"):
             print(file)
+    # While loop to determine the input text file
     while True:
         print("Select a text file from the above selection of files to encrypt:")
         fileName = input()
@@ -132,13 +147,12 @@ if __name__ == "__main__":
         else:
             print("The file you wish to encrypt does not exist or is not a text file")
 
-    #The key schedule generated
+    print("Generating Keys....")
     d,n,e = key_schedule(p,q)
     print(f"d:{d} n: {n} e: {e}")
-
     #Output the encrypted and decrypted text files
-
     #Encryption code
+    print("Encrypting....")
     encrypted_text = encrypt(message,n,e)
     savePath = "./out/Encrypted.txt"
     with open(savePath,"w") as e:

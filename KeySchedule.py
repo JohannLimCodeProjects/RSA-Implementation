@@ -1,4 +1,5 @@
 import math
+import time
 
 # Eulers Totient
 def eulersTotient(p,q):
@@ -42,6 +43,7 @@ def findTheValuesOfE(eulers_totient):
     e = 0
     values_of_e = []
     while e != eulers_totient:
+        print(e)
         gcd = findGCD(e,eulers_totient)
         # print(e,gcd,eulers_totient)
         if gcd == 1:
@@ -104,14 +106,16 @@ def key_schedule(p,q):
     n = p*q
     eulers = eulersTotient(p,q)
     # print(eulers)
-    values_of_e = findTheValuesOfE(eulers)
+    # values_of_e = findTheValuesOfE(eulers)
 
-    # print(f"Choose one of the following to use to produce the public and private keys:{values_of_e}")
-    e_search = int(input())
-    for e in values_of_e:
-        if e == e_search:
-            break
-        
+    # e_search = 65537
+    e = 65537
+    # # for e in values_of_e:
+    #     print(e)
+    #     if e == e_search:
+    #         print("Found 65537")
+    #         break
+    
     d = modular_inverse(e,eulers)
 
     return d,n,e
